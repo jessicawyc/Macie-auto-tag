@@ -53,7 +53,6 @@ def lambda_handler(event, context):
     #获得S3相关信息
     accountid = event["detail"]["accountId"]
     region = event["detail"]["region"]
-    findingtype = event["detail"]["type"]
     s3name = event["detail"]["resourcesAffected"]["s3Bucket"]["name"]
     s3tag = event["detail"]["resourcesAffected"]["s3Bucket"]["tags"] #need to check whether it is has classification tag already, list with dics
     filename = event["detail"]["resourcesAffected"]["s3Object"]["key"]

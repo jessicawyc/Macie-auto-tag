@@ -1,5 +1,7 @@
 # Macie-auto-tag
 after macie scan for sensitive information, using lambda to automatically tag S3 object based on customized label
+可以在lambda环境变量中自定数据的保密级别
+![snapshot](https://github.com/jessicawyc/Macie-auto-tag/blob/main/macie-define-level.png)
 可以采用以下两种架构实现:
 lambda代码请下载:
 直接通过Eventbridge的方式: [macie-eb-auto-tag.py](https://github.com/jessicawyc/Macie-auto-tag/blob/main/macie-eb-auto-tag.py)

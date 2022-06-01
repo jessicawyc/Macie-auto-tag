@@ -8,3 +8,17 @@ lambda代码请下载:
 ![diagram](https://github.com/jessicawyc/Macie-auto-tag/blob/main/maci-auto-tag-architect.png)
 
 从Securityhub通过手动方式发送:macie-sh-auto-tag.py
+## create eventbridge
+### 参数设置
+```
+regions=($(aws ec2 describe-regions --query 'Regions[*].RegionName' --region=us-east-1 --output text))
+rulename='macierule'
+```
+### 运行CLI命令
+```
+for region in $regions; do
+rulearn=$(aws events put-rule  --name $rulename  --event-pattern "{\"source\": [\"aws.macie\"],\"detail-type\": [\"Macie Finding\"]}" --region=$region --query 'RuleArn' --output text)
+echo $rulearn
+echo $region
+done
+```

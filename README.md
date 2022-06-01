@@ -8,7 +8,7 @@ lambda代码请下载:
 ![diagram](https://github.com/jessicawyc/Macie-auto-tag/blob/main/maci-auto-tag-architect.png)
 
 从Securityhub通过手动方式发送:macie-sh-auto-tag.py
-## create eventbridge
+## 方案1 Create eventbridge
 ### 参数设置
 ```
 regions=($(aws ec2 describe-regions --query 'Regions[*].RegionName' --region=us-east-1 --output text))

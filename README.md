@@ -1,5 +1,8 @@
-# Macie-auto-tag
-after macie scan for sensitive information, using lambda to automatically tag S3 object based on customized label
+# 2 Ways to trigger a Macie scan and automatically tag S3 by customized sensitive label
+
+Step 1 Trigger a macie on time job to scan a S3
+Step 2 automatically tag S3 object based on customized label
+
 可以在lambda环境变量中自定数据的保密级别
 ![snapshot](https://github.com/jessicawyc/Macie-auto-tag/blob/main/macie-define-level.png)
 There are two architecture to acheive the automatically tagging action:

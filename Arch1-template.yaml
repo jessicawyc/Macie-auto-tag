@@ -41,7 +41,7 @@ Resources:
           - Macie Finding
         detail:
           category:
-            -CLASSIFICATION
+            - CLASSIFICATION
       State: ENABLED
       Targets:
         - Arn:

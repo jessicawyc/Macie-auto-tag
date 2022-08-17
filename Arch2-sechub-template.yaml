@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
+  customactionarn:
+    Type: String
+    Default: arn:aws:securityhub:<region>:<accountid>:action/custom/tag
+    Description: the arn output from cli
   level0:
     Type: String
     Default: level0
@@ -36,12 +40,11 @@ Resources:
       Description: EventRule
       EventPattern:
         source:
-          - aws.macie
+          - aws.securityhub
         detail-type:
-          - Macie Finding
-        detail:
-          category:
-            - CLASSIFICATION
+          - Security Hub Findings - Custom Action
+        resources:
+          - !Ref customactionarn
       State: ENABLED
       Targets:
         - Arn:

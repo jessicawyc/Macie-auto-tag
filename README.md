@@ -59,9 +59,9 @@ aws securityhub create-action-target \
 ```
 ### Step 2 Create Eventbridge Rule and Lambda
 
-Run Cloudformation template in only the aggregated region of security hub.
+Run Cloudformation template in only the aggregated region of security hub. The command is quite similiar, make sure you use the right yaml file.
 ```
-aws cloudformation create-stack --stack-name $stackname --template-body file://Arch1-template.yaml \
+aws cloudformation create-stack --stack-name $stackname --template-body file://Arch2-sechub-template.yaml \
 --parameters  \
 ParameterKey=level0,ParameterValue=public  \
 ParameterKey=level1,ParameterValue=internal  \

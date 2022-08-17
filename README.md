@@ -12,8 +12,8 @@ lambda代码请下载:index.zip
 ### Step 2 Define identifier mapping with label level 
 Download the file [mapping.json](/mapping.json), change the numbers for each identifier you use, for custome identifier,just add Key Value pair in the file.
 Then upload the json file into a S3 bucket, input the s3 name and file name in lambda's enviroment variables
-## 方案1 Architecture 1 Create eventbridge rule to automatically trigger tagging after Macie generates sensitive data finding
-## Cloudformation
+## Deployment
+## 方案1 Architecture 1 
 Deploy Template either in console or with below CLI command for mutiple regions
 Set Parameter
 ```

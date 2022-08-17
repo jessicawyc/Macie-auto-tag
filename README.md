@@ -60,6 +60,12 @@ aws securityhub create-action-target \
 ### Step 2 Create Eventbridge Rule and Lambda
 
 Run Cloudformation template in only the aggregated region of security hub. The command is quite similiar, make sure you use the right yaml file.
+Set Parameter
+```
+stackname=sechub-macie-autotag
+region=eu-west-3
+```
+Run CLI command to create a cloudformation stack
 ```
 aws cloudformation create-stack --stack-name $stackname --template-body file://Arch2-sechub-template.yaml \
 --parameters  \
@@ -72,6 +78,5 @@ ParameterKey=s3bucketname,ParameterValue=maciemappingbucket  \
 ParameterKey=s3filepath,ParameterValue=mapping.json \
 --capabilities CAPABILITY_IAM \
 --region=$region
-
 ```
 

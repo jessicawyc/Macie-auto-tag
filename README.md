@@ -52,10 +52,10 @@ id='tag'
 ```
 Run CLI Command to create resources
 ```
-aws securityhub create-action-target \
+caarn=$(aws securityhub create-action-target \
     --name $name\
     --description $description \
-    --id $id --region=$region
+    --id $id --region=$region --query 'ActionTargetArn' --output text)
 ```
 ### Step 2 Create Eventbridge Rule and Lambda
 

@@ -52,10 +52,11 @@ id='tag'
 ```
 Run CLI Command to create resources
 ```
-aws securityhub create-action-target \
+caarn=$(aws securityhub create-action-target \
     --name $name\
     --description $description \
-    --id $id --region=$region --query 'ActionTargetArn' --output text
+    --id $id --region=$region --query 'ActionTargetArn' --output text)
+echo $caarn
 ```
 The output will be the custom action's arn,like below, copy this arn,we will use it next step
 ```
@@ -67,12 +68,13 @@ Run Cloudformation template in only the aggregated region of security hub. The c
 Set Parameter
 ```
 stackname=sechub-macie-autotag
-region=eu-west-3
+region=eu-west-2
 ```
 Run CLI command to create a cloudformation stack
 ```
 aws cloudformation create-stack --stack-name $stackname --template-body file://Arch2-sechub-template.yaml \
 --parameters  \
+ParameterKey=customactionarn,ParameterValue=$caarn  \
 ParameterKey=level0,ParameterValue=public  \
 ParameterKey=level1,ParameterValue=internal  \
 ParameterKey=level2,ParameterValue=sensitive  \

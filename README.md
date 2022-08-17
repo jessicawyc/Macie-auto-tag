@@ -52,11 +52,12 @@ id='tag'
 ```
 Run CLI Command to create resources
 ```
-caarn=$(aws securityhub create-action-target \
+aws securityhub create-action-target \
     --name $name\
     --description $description \
-    --id $id --region=$region --query 'ActionTargetArn' --output text)
+    --id $id --region=$region --query 'ActionTargetArn' --output text
 ```
+The output will be the custom action's arn,like :arn:aws:securityhub:<region>:<accountid>:action/custom/tag
 ### Step 2 Create Eventbridge Rule and Lambda
 
 Run Cloudformation template in only the aggregated region of security hub. The command is quite similiar, make sure you use the right yaml file.

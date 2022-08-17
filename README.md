@@ -88,5 +88,11 @@ ParameterKey=s3filepath,ParameterValue=mapping.json \
 --capabilities CAPABILITY_IAM \
 --region=$region
 ```
+If the Output looks like this, you successully create the stack and wait until it finish running.
+```
+{
+    "StackId": "arn:aws:cloudformation:<region>:<accountid>:stack/sechub-macie-autotag/1cc659a0-1de9-11ed-a006-069cbc938d24"
+}
+```
 #### Console way
 If you choose to create cloudformation stack in aws console. The output from CLI in last step of the custom action, is the first paramter you will input into the stack.

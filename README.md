@@ -59,5 +59,19 @@ aws securityhub create-action-target \
 ```
 ### Step 2 Create Eventbridge Rule and Lambda
 
+Run Cloudformation template in only the aggregated region of security hub.
+```
+aws cloudformation create-stack --stack-name $stackname --template-body file://Arch1-template.yaml \
+--parameters  \
+ParameterKey=level0,ParameterValue=public  \
+ParameterKey=level1,ParameterValue=internal  \
+ParameterKey=level2,ParameterValue=sensitive  \
+ParameterKey=level3,ParameterValue=topsecret  \
+ParameterKey=tagkey,ParameterValue=datalevel  \
+ParameterKey=s3bucketname,ParameterValue=maciemappingbucket  \
+ParameterKey=s3filepath,ParameterValue=mapping.json \
+--capabilities CAPABILITY_IAM \
+--region=$region
 
+```
 

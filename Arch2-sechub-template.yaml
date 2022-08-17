@@ -197,7 +197,7 @@ Resources:
                       return (result)
               else:
                   print("undefined taggning label for scanned type {}, please check your mapping file!".format(typelist))
-      Description: detect macie finding to auto tag s3 object
+      Description: detect macie finding from eventbridge rule, use lambda to auto tag s3 object based on customized label
       TracingConfig:
         Mode: Active
   IAMRole:

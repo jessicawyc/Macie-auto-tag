@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  level0:
+    Type: String
+    Default: level0
+    Description: the lowerest value of tag, e.g.public
+  level1:
+    Type: String
+    Default: level1
+    Description: the second lowerest value,e.g.internal
+  level2:
+    Type: String
+    Default: level2
+    Description: e.g sensitive
+  level3:
+    Type: String
+    Default: level3
+    Description: the Highest value of tag,e.g.Secret
+  tagkey:
+    Type: String
+    Default: datalevel
+    Description: the key of the tag,e.g datalabel
+  s3bucketname:
+    Type: String
+    Default: maciemappingbucket
+    Description: bucket name  where mapping file stored
+  s3filepath:
+    Type: String
+    Default: mapping.json
+    Description: keyname of the json file which mapping macie Identifiers with your defined levels 
+
+Resources:
+  EventRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: EventRule
+      EventPattern:
+        source:
+          - aws.macie
+        detail-type:
+          - Macie Finding
+        detail:
+          category:
+            - CLASSIFICATION
+      State: ENABLED
+      Targets:
+        - Arn:
+            'Fn::GetAtt':
+              - LambdaFunction
+              - Arn
+          Id: '1'
+  PermissionForEventsToInvokeLambda:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName:
+        Ref: LambdaFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn:
+        'Fn::GetAtt':
+          - EventRule
+          - Arn
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.9
+      Role: !GetAtt IAMRole.Arn
+      Handler: index.lambda_handler
+      Timeout: 600
+      Environment:
+        Variables:
+          level0: !Ref level0
+          level1: !Ref level1
+          level2: !Ref level2
+          level3: !Ref level3
+          tagkey: !Ref tagkey
+          mappingbucket: !Ref s3bucketname
+          mappingfile: !Ref s3filepath
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          s3 = boto3.client('s3')
+          typelist=[]
+          #把环境变量中设置的级别取出 get all the values from enviromental paramter
+          tagkey=os.environ['tagkey']
+          mappingbucket=os.environ['mappingbucket']
+          mappingfile=os.environ['mappingfile']
+          dataclass=[]
+          for i in range(4): #if your levels are 3 or 5 ,you have to change this number and also the enviroment parameters
+              dataclass.append(os.environ[('level'+str(i))])
+          #判断现有标签的级别是否存在 decide the current tag of object
+          #read the mapping json file from s3,读取客户自定义类型的匹配json文件
+          def getmapping(mappingbucket,mappingfile):
+              s3 = boto3.resource('s3')
+              obj = s3.Object(mappingbucket, mappingfile)
+              data = json.load(obj.get()['Body']) 
+              #print(data)
+              return(data)
+          datadic=getmapping(mappingbucket,mappingfile)
+          #print(datadic)
+          #标签定级分析,需要提前预置对应关系,并对原有标签进行比较,取较高者,choose the highest level tag   
+          def currenttag(filetag): 
+              oldlevel=0
+              for each in filetag:
+                  if each['Key']==tagkey:
+                      oldvalue=each['Value']
+                      if oldvalue in dataclass:
+                          oldlevel=dataclass.index(oldvalue)
+                      else:
+                          print(oldvalue,' is not defined please check error, will treate it as none')
+                          oldlevel=0
+                      filetag.remove(each)
+              return(oldlevel,filetag)
+          def taglevel(newtypelist,oldlevel):
+              levels=[]
+              for each in newtypelist:
+                  print('sensitive data type: ',each)
+                  if (each in datadic.keys()):
+                      levels.append(datadic[each])
+                  else:
+                      print(each,' can not find its level data ,please update your mapping json!')
+              print("found these sensitive level:{}".format(levels))
+              return(max(levels))        
+          def gettag(s3name,filename):
+              response = s3.get_object_tagging(
+              Bucket=s3name,
+              Key=filename)
+              return(response["TagSet"])
+
+          def tag(s3name,filename,filetag):
+              response = s3.put_object_tagging(
+                  Bucket=s3name,
+                  Key=filename,
+                  Tagging={
+                      'TagSet': filetag
+                  }
+              )
+              return response
+          def lambda_handler(event, context):
+              #根据event类型，获得S3相关信息 get S3 information based on event type,macie or securityhub
+              sourcetype=event["detail-type"]
+              if sourcetype=="Macie Finding":# macie event ,all lower case letters
+                  accountid = event["detail"]["accountId"]
+                  region = event["detail"]["region"]
+                  s3name = event["detail"]["resourcesAffected"]["s3Bucket"]["name"]
+                  filename = event["detail"]["resourcesAffected"]["s3Object"]["key"]
+                  #filetag = event["detail"]["resourcesAffected"]["s3Object"]["tags"] # drop it because macie fining's tag is lowercase
+                  customrule=event["detail"]["classificationDetails"]["result"]["customDataIdentifiers"]["detections"]
+                  managedrule=event["detail"]["classificationDetails"]["result"]["sensitiveData"]
+                  for i in range(len(customrule)):
+                      typelist.append(customrule[i]["name"])
+                  #managed rule结果获取
+                  for i in range(len(managedrule)):
+                      temp=managedrule[i]["detections"]
+                      for each in temp:
+                          typelist.append(each['type'])
+              if sourcetype=="Security Hub Findings - Custom Action":# sechub finding use Capital letters
+                  accountid = event["detail"]["findings"][0]["Resources"][0]["Details"]["AwsS3Bucket"]["OwnerAccountId"]
+                  region = event["detail"]["findings"][0]["Resources"][0]["Region"]
+                  #s3 = event["detail"]["findings"]["Resources"][0]["Id"]
+                  #s3name=s3arn.split(':')[5]
+                  s3info= event["detail"]["findings"][0]["ProductFields"]["S3Object.Path"]
+                  s3name=s3info.split('/')[0]
+                  filename=s3info[s3info.find('/')+1:]
+                  customrule=event["detail"]["findings"][0]["Resources"][1]["DataClassification"]["Result"]["CustomDataIdentifiers"]["Detections"]
+                  managedrule=event["detail"]["findings"][0]["Resources"][1]["DataClassification"]["Result"]["SensitiveData"]
+                  for i in range(len(customrule)):
+                      typelist.append(customrule[i]["Name"])
+                  for i in range(len(managedrule)):
+                      temp=managedrule[i]["Detections"]
+                      for each in temp:
+                          typelist.append(each['Type'])
+              newtypelist=list(set(typelist))       
+              #print("scanned sensitive data types : {}".format(newtypelist))    
+              filetag = gettag(s3name,filename)
+              #print(filetag)
+              #return(tag(s3name,filename,filetag))
+          #判断需要打上的标签级别,原来的与新扫描出的结果,取最高.decide the new level of tag,choose the highest
+              oldlevel=currenttag(filetag)[0]
+              filetag=currenttag(filetag)[1]
+              print('原有标签级别为：'+str(oldlevel)+'\n The Old tag level is:'+str(oldlevel))
+              valuelevel=taglevel(newtypelist,oldlevel)
+              print('新标签级别为：'+str(valuelevel)+'\n The New tag level is:'+str(valuelevel))
+              #print(len(dataclass))
+              if valuelevel < len(dataclass):
+                  value=dataclass[valuelevel]
+                  if oldlevel==0:
+                      filetag.append({'Key':tagkey,'Value':value})
+                  #为S3中的obj打上对应的标签 tagging object in s3
+                      print("Lambda is Tagging your Object: {0} \n which is in S3 bucket {1} with \n tag level :{2}  \n tag name:{3} ".format(filename,s3name,valuelevel,value))
+                      result=tag(s3name,filename,filetag)
+                      return (result)
+              else:
+                  print("undefined taggning label for scanned type {}, please check your mapping file!".format(typelist))
+      Description: detect macie finding to auto tag s3 object
+      TracingConfig:
+        Mode: Active
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Description: basic lambda role plus s3 putobjtag
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: macie-eb-s3-lambda-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObjectTagging'
+                  - 's3:GetObject'
+                  - 's3:PutObjectTagging'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - '*'

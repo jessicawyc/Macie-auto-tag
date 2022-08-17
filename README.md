@@ -58,13 +58,16 @@ caarn=$(aws securityhub create-action-target \
     --id $id --region=$region --query 'ActionTargetArn' --output text)
 echo $caarn
 ```
-The output will be the custom action's arn,like below, copy this arn,we will use it next step
+The output will be the custom action's arn,like below:
+
 ```
 arn:aws:securityhub:<region>:<accountid>:action/custom/tag
 ```
 ### Step 2 Create Eventbridge Rule and Lambda
 
-Run Cloudformation template in only the aggregated region of security hub. The command is quite similiar, make sure you use the right yaml file.
+Run Cloudformation template in only the aggregated region of security hub.
+### CLI command
+The command is quite similiar, make sure you use the right yaml file.
 Set Parameter
 ```
 stackname=sechub-macie-autotag
@@ -85,4 +88,5 @@ ParameterKey=s3filepath,ParameterValue=mapping.json \
 --capabilities CAPABILITY_IAM \
 --region=$region
 ```
-
+#### Console way
+If you choose to create cloudformation stack in aws console. The output from CLI in last step of the custom action, is the first paramter you will input into the stack.

@@ -20,16 +20,39 @@ Parameters:
     Type: String
     Default: datalevel
     Description: the key of the tag,e.g datalabel
-  s3bucketname:
-    Type: String
-    Default: maciemappingbucket
-    Description: bucket name  where mapping file stored
   s3filepath:
     Type: String
     Default: mapping.json
     Description: keyname of the json file which mapping macie Identifiers with your defined levels 
 
 Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      AccessControl: BucketOwnerFullControl
+      LifecycleConfiguration:
+        Rules:
+          -
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 3
+            NoncurrentVersionExpirationInDays: 3
+            Status: Enabled
+     
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        -
+          Key: demo
+          Value: macie-auto-tag
+      VersioningConfiguration:
+        Status: Enabled
   EventRule:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -74,7 +97,7 @@ Resources:
           level2: !Ref level2
           level3: !Ref level3
           tagkey: !Ref tagkey
-          mappingbucket: !Ref s3bucketname
+          mappingbucket: !Ref S3Bucket
           mappingfile: !Ref s3filepath
       Code:
         ZipFile: |
@@ -224,37 +247,8 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource:
                   - '*'
-  S3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref s3bucketname
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      AccessControl: BucketOwnerFullControl
-      LifecycleConfiguration:
-        Rules:
-          -
-            AbortIncompleteMultipartUpload:
-              DaysAfterInitiation: 3
-            NoncurrentVersionExpirationInDays: 3
-            Status: Enabled
-     
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      Tags:
-        -
-          Key: Description
-          Value: Object Storage
-      VersioningConfiguration:
-        Status: Enabled
+
 Outputs:
-  S3BucketArn:
-    Value: !GetAtt
-          - S3Bucket
-          - Arn
-    Description: S3 Bucket arn to upload mappung.json
+  S3BucketName:
+    Value: !Ref S3Bucket
+    Description: S3 Bucket Name which to upload mapping.json
